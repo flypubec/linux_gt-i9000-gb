@@ -307,7 +307,7 @@ int filemap_fdatawait_range(struct address_space *mapping, loff_t start_byte,
 				continue;
 
 			wait_on_page_writeback(page);
-			if (PageError(page))
+			if (TestClearPageError(page))
 				ret = -EIO;
 		}
 		pagevec_release(&pvec);
@@ -1049,6 +1049,9 @@ find_page:
 				goto page_not_up_to_date;
 			if (!trylock_page(page))
 				goto page_not_up_to_date;
+			/* Did it get truncated before we got the lock? */
+			if (!page->mapping)
+				goto page_not_up_to_date_locked;
 			if (!mapping->a_ops->is_partially_uptodate(page,
 								desc, offset))
 				goto page_not_up_to_date_locked;
