@@ -505,8 +505,8 @@ static struct regulator_init_data aries_ldo3_data = {
 static struct regulator_init_data aries_ldo4_data = {
 	.constraints	= {
 		.name		= "VADC_3.3V",
-		.min_uV		= 3000000,
-		.max_uV		= 3000000,
+		.min_uV		= 3300000,
+		.max_uV		= 3300000,
 		.apply_uV	= 1,
 		.always_on	= 1,
 		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
@@ -717,8 +717,8 @@ static struct regulator_init_data aries_buck2_data = {
 static struct regulator_init_data aries_buck3_data = {
 	.constraints	= {
 		.name		= "VCC_1.8V",
-		.min_uV		= 1600000,
-		.max_uV		= 1600000,
+		.min_uV		= 1800000,
+		.max_uV		= 1800000,
 		.apply_uV	= 1,
 		.always_on	= 1,
 	},
@@ -2326,20 +2326,12 @@ static struct i2c_board_info i2c_devs8[] __initdata = {
 static int fsa9480_init_flag = 0;
 static bool mtp_off_status;
 
-#ifdef CONFIG_USB_ANDROID_SAMSUNG_COMPOSITE
-extern u16 askonstatus;
-void fsa9480_usb_cb(bool attached)
-#else
 static void fsa9480_usb_cb(bool attached)
-#endif
 {
 	struct usb_gadget *gadget = platform_get_drvdata(&s3c_device_usbgadget);
 
-#ifdef CONFIG_USB_ANDROID_SAMSUNG_COMPOSITE
-	if ((gadget) && (askonstatus != 0xabcd)) {
-#else
 	if (gadget) {
-#endif
+
 		if (attached)
 			usb_gadget_vbus_connect(gadget);
 		else
