@@ -53,21 +53,7 @@ static DEFINE_MUTEX(set_freq_lock);
 
 /* frequency */
 static struct cpufreq_frequency_table freq_table[] = {
-#ifdef CONFIG_CPU_UV
-        {L0, 1000*1000},
-#endif
-#ifdef CONFIG_CPU_1200
-        {L0, 1200*1000},
-#endif
-#ifdef CONFIG_CPU_1300
-        {L0, 1300*1000},
-#endif
-#ifdef CONFIG_CPU_1400
-	{L0, 1400*1000},
-#endif
-#ifdef CONFIG_CPU_1440
-        {L0, 1440*1000},
-#endif
+        {L0, FREQMAX*1000},
         {L1, 800*1000},
         {L2, 400*1000},
         {L3, 200*1000},
@@ -77,8 +63,7 @@ static struct cpufreq_frequency_table freq_table[] = {
 
 extern int exp_UV_mV[5];
 unsigned int freq_uv_table[5][3] = {
-
-	//frequency, stock voltage, current voltage
+//frequency, stock voltage, current voltage
 #ifdef CONFIG_CPU_UV
 	{1000000, 1275, 1275},
 #endif
@@ -97,7 +82,7 @@ unsigned int freq_uv_table[5][3] = {
 	{800000, 1200, 1200},
 	{400000, 1050, 1050},
 	{200000, 950, 950},
-	{100000, 950, 950}
+	{100000, 950, 950},
 }; 
 
 #if defined(CONFIG_GPU_OC)
@@ -555,6 +540,7 @@ static int s5pv210_cpufreq_target(struct cpufreq_policy *policy,
 		exp_UV_mV[index] = -50;
 
 	arm_volt = (dvs_conf[index].arm_volt - (exp_UV_mV[index]*1000));
+	freq_uv_table[index][2] =(int) arm_volt / 1000;
 	int_volt = dvs_conf[index].int_volt;
 
 	/* New clock information update */
@@ -783,6 +769,7 @@ static int s5pv210_cpufreq_target(struct cpufreq_policy *policy,
 		exp_UV_mV[index] = -50;
 
 	previous_arm_volt = (dvs_conf[index].arm_volt - (exp_UV_mV[index]*1000));
+	freq_uv_table[index][2] = (int) previous_arm_volt / 1000;
 
 	if (first_run)
 		first_run = false;
@@ -818,7 +805,7 @@ static int s5pv210_cpufreq_resume(struct cpufreq_policy *policy)
 
 	if (level == CPUFREQ_TABLE_END) { /* Not found */
 		pr_err("[%s:%d] clock speed does not match: "
-				"%d. Using L2 of 800MHz.\n",
+				"%d. Using L1 of 800MHz.\n",
 				__FILE__, __LINE__, rate);
 		level = L1;
 
@@ -831,6 +818,7 @@ static int s5pv210_cpufreq_resume(struct cpufreq_policy *policy)
 		exp_UV_mV[level] = -50;
 
 	previous_arm_volt = (dvs_conf[level].arm_volt - (exp_UV_mV[level]*1000));
+	freq_uv_table[level][2] = (int) previous_arm_volt / 1000;
 
 	return ret;
 }
@@ -876,7 +864,7 @@ static int __init s5pv210_cpufreq_driver_init(struct cpufreq_policy *policy)
 
 	if (level == CPUFREQ_TABLE_END) { /* Not found */
 		pr_err("[%s:%d] clock speed does not match: "
-				"%d. Using L2 of 800MHz.\n",
+				"%d. Using L1 of 800MHz.\n",
 				__FILE__, __LINE__, rate);
 		level = L1;
 	}
@@ -894,7 +882,7 @@ static int __init s5pv210_cpufreq_driver_init(struct cpufreq_policy *policy)
 			apll_freq_max = clk_info[index].fclk;
 		i++;
 	} while (freq_table[i].frequency != CPUFREQ_TABLE_END);
-	apll_freq_max /= APLLMX; /* in MHz */
+	apll_freq_max /= FREQMAX; /* in MHz */
 
 	memcpy(&s3c_freqs.old, &clk_info[level],
 			sizeof(struct s3c_freq));
@@ -903,6 +891,7 @@ static int __init s5pv210_cpufreq_driver_init(struct cpufreq_policy *policy)
 		exp_UV_mV[level] = -50;
 
 	previous_arm_volt = (dvs_conf[level].arm_volt - (exp_UV_mV[level]*1000));
+	freq_uv_table[level][2] = (int) previous_arm_volt / 1000;
 
 #ifdef CONFIG_DVFS_LIMIT
 	for(i = 0; i < DVFS_LOCK_TOKEN_NUM; i++)
